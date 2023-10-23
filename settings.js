@@ -2,7 +2,7 @@ const fs = require('fs');
 const allowedPrefix = ['.zeni']; // Prefix yang diizinkan untuk merespon
 
 global.fotomenfess = fs.readFileSync("./menfess.jpg");
-global.owner = ["62887435047326"];
+global.owner = ["6289653898291"];
 
 global.help = {
   Menu(pushname) {
