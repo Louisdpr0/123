@@ -1,21 +1,13 @@
-const fs = require('fs');
-const { Client } = require('whatsapp-web.js');
+const allowedPrefix = ['.confess']; // Prefix yang diizinkan untuk merespon
 
-const client = new Client();
+global.fotomenfess = fs.readFileSync("./menfess.jpg")
+global.owner = ["62887435047326"]
 
-client.on('message', async (message) => {
-  if (message.body.startsWith('.start')) {
-    // Tanggapi hanya pesan yang dimulai dengan prefix '.confess'
-    const response = generateResponse(message.sender.pushname);
-    await message.reply(response);
-  }
-});
-
-function generateResponse(pushname) {
+global.help = {
+Menu(pushname){
   return `Halo ${pushname}
 
 Saya adalah bot WhatsApp confess 👋 ketik .confess untuk memulai chat.
-  `;
+`
 }
-
-client.initialize();
+}
