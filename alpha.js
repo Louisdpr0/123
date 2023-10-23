@@ -68,23 +68,28 @@ async function Botstarted() {
     store.bind(alpha.ev)
 
     alpha.ev.on('messages.upsert', async chatUpdate => {
-        try {
-            mek = chatUpdate.messages[0]
-            if (!mek.message) return
-            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-            if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-            if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-
-            // Check for messages with prefix ".zeni"
-            if (mek.message.conversation && mek.message.conversation.startsWith('.zeni')) {
+    //console.log(JSON.stringify(chatUpdate, undefined, 2))
+    try {
+        mek = chatUpdate.messages[0]
+        if (!mek.message) return
+        mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+        if (mek.key && mek.key.remoteJid === 'status@broadcast') return
+        if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
+        if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+        
+        // Tambahkan kondisi pengecekan di sini sebelum balasan
+        if (mek.message.text) {
+            // Contoh: Hanya balas jika pesan mengandung kata kunci "bot"
+            if (mek.message.text.includes("bot")) {
                 m = smsg(alpha, mek, store)
                 require("./confess")(alpha, m, chatUpdate, store, menfess)
             }
-        } catch (err) {
-            console.log(err)
         }
-    })
+    } catch (err) {
+        console.log(err)
+    }
+})
+
 
     // Setting
     alpha.decodeJid = (jid) => {
