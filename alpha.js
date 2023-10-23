@@ -1,16 +1,27 @@
 require('./settings')
-//berikut adalah kode uptime robot untuk replit (buat yang paham aja)
-//require("http").createServer((_, res) => res.end("Uptime!")).listen(8080)
 
-const { default: WADefault, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto } = require("@adiwajshing/baileys")
+const {
+    default: WADefault,
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    generateForwardMessageContent,
+    prepareWAMessageMedia,
+    generateWAMessageFromContent,
+    generateMessageID,
+    downloadContentFromMessage,
+    makeInMemoryStore,
+    jidDecode,
+    proto
+} = require("@adiwajshing/baileys")
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const PhoneNumber = require('awesome-phonenumber')
 const { smsg } = require('./lib/simple')
 const {
-   toBuffer,
-   toDataURL
+    toBuffer,
+    toDataURL
 } = require('qrcode')
 const express = require('express')
 let app = express()
@@ -28,45 +39,48 @@ async function Botstarted() {
     const alpha = WADefault({
         logger: pino({ level: 'silent' }),
         printQRInTerminal: true,
-        browser: ['BOT CONFESS','Safari','1.0.0'],
+        browser: ['BOT CONFESS', 'Safari', '1.0.0'],
         patchMessageBeforeSending: (message) => {
 
-                const requiresPatch = !!(
-                  message.buttonsMessage
-              	  || message.templateMessage
-              		|| message.listMessage
-                );
-                if (requiresPatch) {
-                    message = {
-                        viewOnceMessage: {
-                            message: {
-                                messageContextInfo: {
-                                    deviceListMetadataVersion: 2,
-                                    deviceListMetadata: {},
-                                },
-                                ...message,
+            const requiresPatch = !!(
+                message.buttonsMessage ||
+                message.templateMessage ||
+                message.listMessage
+            );
+            if (requiresPatch) {
+                message = {
+                    viewOnceMessage: {
+                        message: {
+                            messageContextInfo: {
+                                deviceListMetadataVersion: 2,
+                                deviceListMetadata: {},
                             },
+                            ...message,
                         },
-                    };
-                }
-                return message;
-    },
+                    },
+                };
+            }
+            return message;
+        },
         auth: state
     })
 
     store.bind(alpha.ev)
 
     alpha.ev.on('messages.upsert', async chatUpdate => {
-        //console.log(JSON.stringify(chatUpdate, undefined, 2))
         try {
-        mek = chatUpdate.messages[0]
-        if (!mek.message) return
-        mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-        if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-        if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-        if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-        m = smsg(alpha, mek, store)
-        require("./confess")(alpha, m, chatUpdate, store, menfess)
+            mek = chatUpdate.messages[0]
+            if (!mek.message) return
+            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+            if (mek.key && mek.key.remoteJid === 'status@broadcast') return
+            if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
+            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+
+            // Check for messages with prefix ".zeni"
+            if (mek.message.conversation && mek.message.conversation.startsWith('.zeni')) {
+                m = smsg(alpha, mek, store)
+                require("./confess")(alpha, m, chatUpdate, store, menfess)
+            }
         } catch (err) {
             console.log(err)
         }
