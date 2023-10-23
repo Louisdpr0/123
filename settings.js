@@ -1,3 +1,4 @@
+const fs = require('fs')
 const allowedPrefix = ['.confess']; // Prefix yang diizinkan untuk merespon
 
 global.fotomenfess = fs.readFileSync("./menfess.jpg")
