@@ -53,26 +53,28 @@ async function Botstarted() {
 
     store.bind(alpha.ev)
 
-    alpha.ev.on('messages.upsert', async chatUpdate => {
-        try {
-            mek = chatUpdate.messages[0]
-            if (!mek.message) return
-            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-            if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-            if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-            m = smsg(alpha, mek, store)
-            if (mek.message.conversation.startsWith('.confess')) {
-			require("./confess")(alpha, m, chatUpdate, store, menfess);
-			} else if (mek.message.conversation.startsWith('.balasmenfess')) {
-			require("./confess")(alpha, m, chatUpdate, store, menfess);
-			} else if (mek.message.conversation.startsWith('.tolakmenfess')) {
-			require("./confess")(alpha, m, chatUpdate, store, menfess);
-			}
-        } catch (err) {
-            console.log(err)
+   alpha.ev.on('messages.upsert', async chatUpdate => {
+    try {
+        mek = chatUpdate.messages[0];
+        if (!mek.message) return;
+        mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
+        if (mek.key && mek.key.remoteJid === 'status@broadcast') return;
+        if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return;
+        if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return;
+        m = smsg(alpha, mek, store);
+        
+        if (mek.message.conversation.startsWith('.confess')) {
+            require("./confess")(alpha, m, chatUpdate, store, menfess);
+        } else if (mek.message.conversation.startsWith('.menfess')) {
+            require("./confess")(alpha, m, chatUpdate, store, menfess);
+        } else if (mek.message.conversation.startsWith('.tolakmenfess')) {
+            require("./confess")(alpha, m, chatUpdate, store, menfess);
         }
-    })
+    } catch (err) {
+        console.log(err);
+    }
+});
+
 
     // Setting
     alpha.decodeJid = (jid) => {
@@ -145,4 +147,60 @@ async function Botstarted() {
             else if (reason === DisconnectReason.restartRequired) { console.log("Restart Required, Restarting..."); Botstarted(); }
             else if (reason === DisconnectReason.timedOut) { console.log("Connection TimedOut, Reconnecting..."); Botstarted(); }
             else if (reason === DisconnectReason.Multidevicemismatch) { console.log("Multi device mismatch, please scan again"); alpha.logout(); }
-            else alpha.end
+            else alpha.end (`Unknown DisconnectReason: ${reason}|${connection}`)
+        }
+        if (update.connection == "open" || update.receivedPendingNotifications == "true") {
+         await store.chats.all()
+         console.log(`Connected to = ` + JSON.stringify(alpha.user, null, 2))
+         //alpha.sendMessage("77777777777" + "@s.whatsapp.net", {text:"", "contextInfo":{"expiration": 86400}})
+      }
+    })
+
+    alpha.ev.on('creds.update', saveCreds)
+alpha.sendText = (jid, text, quoted = '', options) => alpha.sendMessage(jid, {
+      text: text,
+      ...options
+   }, {
+      quoted
+   })
+alpha.copyNForward = async (jid, message, forceForward = false, options = {}) => {
+
+  let vtype
+
+	if (options.readViewOnce) {
+		message.message = message.message && message.message.ephemeralMessage && message.message.ephemeralMessage.message ? message.message.ephemeralMessage.message : (message.message || undefined)
+		vtype = Object.keys(message.message.viewOnceMessage.message)[0]
+		delete(message.message && message.message.ignore ? message.message.ignore : (message.message || undefined))
+		delete message.message.viewOnceMessage.message[vtype].viewOnce
+		message.message = {
+			...message.message.viewOnceMessage.message
+	}}
+
+	let mtype = Object.keys(message.message)[0]
+	let content = await generateForwardMessageContent(message, forceForward)
+	let ctype = Object.keys(content)[0]
+	let context = {}
+	if (mtype != "conversation") context = message.message[mtype].contextInfo
+	content[ctype].contextInfo = {
+				...context,
+				...content[ctype].contextInfo
+	}
+	const waMessage = await generateWAMessageFromContent(jid, content, options ? {
+		...content[ctype],
+		...options,
+		...(options.contextInfo ? {
+		contextInfo: {
+				...content[ctype].contextInfo,
+				...options.contextInfo
+				}
+		} : {})
+	} : {})
+	await alpha.relayMessage(jid, waMessage.message, { messageId: waMessage.key.id })
+	return waMessage
+}
+
+    return alpha
+}
+
+
+Botstarted()
