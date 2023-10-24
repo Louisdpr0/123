@@ -1,27 +1,13 @@
 require('./settings')
-
-const {
-    default: WADefault,
-    useMultiFileAuthState,
-    DisconnectReason,
-    fetchLatestBaileysVersion,
-    generateForwardMessageContent,
-    prepareWAMessageMedia,
-    generateWAMessageFromContent,
-    generateMessageID,
-    downloadContentFromMessage,
-    makeInMemoryStore,
-    jidDecode,
-    proto
-} = require("@adiwajshing/baileys")
+const { default: WADefault, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto } = require("@adiwajshing/baileys")
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const PhoneNumber = require('awesome-phonenumber')
 const { smsg } = require('./lib/simple')
 const {
-    toBuffer,
-    toDataURL
+   toBuffer,
+   toDataURL
 } = require('qrcode')
 const express = require('express')
 let app = express()
@@ -39,57 +25,54 @@ async function Botstarted() {
     const alpha = WADefault({
         logger: pino({ level: 'silent' }),
         printQRInTerminal: true,
-        browser: ['BOT CONFESS', 'Safari', '1.0.0'],
+        browser: ['BOT CONFESS','Safari','1.0.0'],
         patchMessageBeforeSending: (message) => {
 
-            const requiresPatch = !!(
-                message.buttonsMessage ||
-                message.templateMessage ||
-                message.listMessage
-            );
-            if (requiresPatch) {
-                message = {
-                    viewOnceMessage: {
-                        message: {
-                            messageContextInfo: {
-                                deviceListMetadataVersion: 2,
-                                deviceListMetadata: {},
+                const requiresPatch = !!(
+                  message.buttonsMessage
+                  || message.templateMessage
+                    || message.listMessage
+                );
+                if (requiresPatch) {
+                    message = {
+                        viewOnceMessage: {
+                            message: {
+                                messageContextInfo: {
+                                    deviceListMetadataVersion: 2,
+                                    deviceListMetadata: {},
+                                },
+                                ...message,
                             },
-                            ...message,
                         },
-                    },
-                };
-            }
-            return message;
-        },
+                    };
+                }
+                return message;
+    },
         auth: state
     })
 
     store.bind(alpha.ev)
 
     alpha.ev.on('messages.upsert', async chatUpdate => {
-    //console.log(JSON.stringify(chatUpdate, undefined, 2))
-    try {
-        mek = chatUpdate.messages[0]
-        if (!mek.message) return
-        mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-        if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-        if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-        if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-        
-        // Tambahkan kondisi pengecekan di sini sebelum balasan
-        if (mek.message.text) {
-            // Contoh: Hanya balas jika pesan mengandung kata kunci "bot"
-            if (mek.message.text.includes("bot")) {
-                m = smsg(alpha, mek, store)
-                require("./confess")(alpha, m, chatUpdate, store, menfess)
-            }
+        try {
+            mek = chatUpdate.messages[0]
+            if (!mek.message) return
+            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+            if (mek.key && mek.key.remoteJid === 'status@broadcast') return
+            if (!alpha.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
+            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+            m = smsg(alpha, mek, store)
+            if (mek.message.conversation.startsWith('.confess')) {
+			require("./confess")(alpha, m, chatUpdate, store, menfess);
+			} else if (mek.message.conversation.startsWith('.balasmenfess')) {
+			require("./confess")(alpha, m, chatUpdate, store, menfess);
+			} else if (mek.message.conversation.startsWith('.tolakmenfess')) {
+			require("./confess")(alpha, m, chatUpdate, store, menfess);
+			}
+        } catch (err) {
+            console.log(err)
         }
-    } catch (err) {
-        console.log(err)
-    }
-})
-
+    })
 
     // Setting
     alpha.decodeJid = (jid) => {
@@ -126,14 +109,14 @@ async function Botstarted() {
     }
     
     alpha.sendContact = async (jid, kon, quoted = '', opts = {}) => {
-	let list = []
-	for (let i of kon) {
-	    list.push({
-	    	displayName: await alpha.getName(i + '@s.whatsapp.net'),
-	    	vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await alpha.getName(i + '@s.whatsapp.net')}\nFN:${await alpha.getName(i + '@s.whatsapp.net')}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
-	    })
-	}
-	alpha.sendMessage(jid, { contacts: { displayName: `${list.length} Kontak`, contacts: list }, ...opts }, { quoted })
+        let list = []
+        for (let i of kon) {
+            list.push({
+                displayName: await alpha.getName(i + '@s.whatsapp.net'),
+                vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await alpha.getName(i + '@s.whatsapp.net')}\nFN:${await alpha.getName(i + '@s.whatsapp.net')}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
+            })
+        }
+        alpha.sendMessage(jid, { contacts: { displayName: `${list.length} Kontak`, contacts: list }, ...opts }, { quoted })
     }
     
     alpha.public = true
@@ -143,17 +126,17 @@ async function Botstarted() {
     alpha.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update	 
         if (qr) {
-         app.use(async (req, res) => {
-            res.setHeader('content-type', 'image/png')
-            res.end(await toBuffer(qr))
-         })
-         app.use(express.static(path.join(__dirname, 'views')))
-         app.listen(PORT, () => {
-            console.log('App listened on port', PORT)
-         })
-      }
+            app.use(async (req, res) => {
+                res.setHeader('content-type', 'image/png')
+                res.end(await toBuffer(qr))
+            })
+            app.use(express.static(path.join(__dirname, 'views')))
+            app.listen(PORT, () => {
+                console.log('App listened on port', PORT)
+            })
+        }
         if (connection === 'close') {
-        let reason = new Boom(lastDisconnect?.error)?.output.statusCode
+            let reason = new Boom(lastDisconnect?.error)?.output.statusCode
             if (reason === DisconnectReason.badSession) { console.log(`Bad Session File, Please Delete Session and Scan Again`); alpha.logout(); }
             else if (reason === DisconnectReason.connectionClosed) { console.log("Connection closed, reconnecting...."); Botstarted(); }
             else if (reason === DisconnectReason.connectionLost) { console.log("Connection Lost from Server, reconnecting..."); Botstarted(); }
@@ -162,60 +145,4 @@ async function Botstarted() {
             else if (reason === DisconnectReason.restartRequired) { console.log("Restart Required, Restarting..."); Botstarted(); }
             else if (reason === DisconnectReason.timedOut) { console.log("Connection TimedOut, Reconnecting..."); Botstarted(); }
             else if (reason === DisconnectReason.Multidevicemismatch) { console.log("Multi device mismatch, please scan again"); alpha.logout(); }
-            else alpha.end(`Unknown DisconnectReason: ${reason}|${connection}`)
-        }
-        if (update.connection == "open" || update.receivedPendingNotifications == "true") {
-         await store.chats.all()
-         console.log(`Connected to = ` + JSON.stringify(alpha.user, null, 2))
-         //alpha.sendMessage("77777777777" + "@s.whatsapp.net", {text:"", "contextInfo":{"expiration": 86400}})
-      }
-    })
-
-    alpha.ev.on('creds.update', saveCreds)
-alpha.sendText = (jid, text, quoted = '', options) => alpha.sendMessage(jid, {
-      text: text,
-      ...options
-   }, {
-      quoted
-   })
-alpha.copyNForward = async (jid, message, forceForward = false, options = {}) => {
-
-  let vtype
-
-	if (options.readViewOnce) {
-		message.message = message.message && message.message.ephemeralMessage && message.message.ephemeralMessage.message ? message.message.ephemeralMessage.message : (message.message || undefined)
-		vtype = Object.keys(message.message.viewOnceMessage.message)[0]
-		delete(message.message && message.message.ignore ? message.message.ignore : (message.message || undefined))
-		delete message.message.viewOnceMessage.message[vtype].viewOnce
-		message.message = {
-			...message.message.viewOnceMessage.message
-	}}
-
-	let mtype = Object.keys(message.message)[0]
-	let content = await generateForwardMessageContent(message, forceForward)
-	let ctype = Object.keys(content)[0]
-	let context = {}
-	if (mtype != "conversation") context = message.message[mtype].contextInfo
-	content[ctype].contextInfo = {
-				...context,
-				...content[ctype].contextInfo
-	}
-	const waMessage = await generateWAMessageFromContent(jid, content, options ? {
-		...content[ctype],
-		...options,
-		...(options.contextInfo ? {
-		contextInfo: {
-				...content[ctype].contextInfo,
-				...options.contextInfo
-				}
-		} : {})
-	} : {})
-	await alpha.relayMessage(jid, waMessage.message, { messageId: waMessage.key.id })
-	return waMessage
-}
-
-    return alpha
-}
-
-
-Botstarted()
+            else alpha.end
