@@ -63,13 +63,8 @@ async function Botstarted() {
         if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return;
         m = smsg(alpha, mek, store);
         
-        if (mek.message.conversation.startsWith('.confess')) {
+        if (mek.message.conversation.startsWith('.confess .menfess .tolakmenfess')) {
             require("./confess")(alpha, m, chatUpdate, store, menfess);
-        } else if (mek.message.conversation.startsWith('.menfess')) {
-            require("./confess")(alpha, m, chatUpdate, store, menfess);
-        } else if (mek.message.conversation.startsWith('.tolakmenfess')) {
-            require("./confess")(alpha, m, chatUpdate, store, menfess);
-        }
     } catch (err) {
         console.log(err);
     }
